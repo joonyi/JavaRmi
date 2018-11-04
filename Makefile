@@ -1,8 +1,9 @@
 JCC = javac
+SRC = src/com/example/fileserver
 JFLAGS = -g
 
 all:
-	javac *.java
+	$(JCC) $(SRC)/*.java
 
 Server:
 	$(JCC) $(JFLAGS) Server.java
@@ -17,4 +18,4 @@ RemoteInterface:
 	$(JCC) $(JFLAGS) RemoteInterface.java
 
 clean:
-	rm *.class
+	rm $(SRC)/*.class

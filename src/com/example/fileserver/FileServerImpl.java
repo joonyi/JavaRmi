@@ -9,7 +9,7 @@ public class FileServerImpl extends UnicastRemoteObject implements FileServerRem
 	}
 
 	@Override
-	public void pingServer(String clientName) {
+	public void pingServer(String clientName) throws RemoteException {
 		System.out.println("File server pinged by " + clientName);
 	}
 
