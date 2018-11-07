@@ -16,7 +16,13 @@ public class FileClient {
 			System.out.println("Connecting to file server with remote url: " + remoteUrl);
 			FileServerRemoteInterface fileServer = (FileServerRemoteInterface) Naming.lookup(remoteUrl);
 			System.out.println("Established connection with file server");
+
+			//Ping server
 			fileServer.pingServer("FileClient1");
+
+			//Create file
+			fileServer.createFile("apple.txt");
+
 		} catch (Exception ex) {
 			System.err.println("Client exception thrown: " + ex);
 		}
