@@ -7,17 +7,18 @@
  * The interface java.rmi.remote extend not interface or methods,
  * it is a marker interface which distinguishes remote interfaces from non-remote interfaces.*/
 
- import java.rmi.Remote;
- import java.rmi.RemoteException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
- public interface RemoteInterface extends Remote {
-
-    /**
-     * method returns a String message to its caller
-     * @param str :value of String*/
+public interface RemoteInterface extends Remote {
+	/**
+	 * method returns a String message to its caller
+	 * @param str :value of String*/
 	public String sayHello(String str) throws RemoteException;
 	public String createFile(String str) throws RemoteException;
-	public String readFile() throws RemoteException;
+	public String readFile(String str) throws RemoteException;
 	public String writeFile(String str) throws RemoteException;
+	public boolean checkFile(String str) throws RemoteException;
 	public String deleteFile(String str) throws RemoteException;
- }
+	public String viewFile() throws RemoteException;
+}
