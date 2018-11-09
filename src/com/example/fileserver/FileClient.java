@@ -17,7 +17,7 @@ public class FileClient {
 			FileServerRemoteInterface fileServer = (FileServerRemoteInterface) Naming.lookup(remoteUrl);
 			System.out.println("Established connection with file server");
 
-			// Ping server
+			// Ping server with client ID
 			fileServer.pingServer("File Client #1");
 
 			// Create file
