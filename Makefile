@@ -11,7 +11,7 @@ server:
 	$(JCC) $(JFLAGS) $(SRC)/ServerConfig.java $(SRC)/FileServerRemoteInterface.java $(SRC)/FileServer.java $(SRC)/FileServerImpl.java -d $(BIN)
 
 
-client:	
+client:
 	$(JCC) $(JFLAGS) $(SRC)/ServerConfig.java $(SRC)/FileServerRemoteInterface.java $(SRC)/FileClient.java -d $(BIN)
 
 

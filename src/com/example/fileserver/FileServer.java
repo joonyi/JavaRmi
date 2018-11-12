@@ -1,4 +1,4 @@
-package com.example.fileserver;
+package src.com.example.fileserver;
 
 import java.io.File;
 import java.rmi.RemoteException;

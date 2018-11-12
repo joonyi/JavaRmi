@@ -1,4 +1,4 @@
-package com.example.fileserver;
+package src.com.example.fileserver;
 
 public class ServerConfig {
 
@@ -15,7 +15,7 @@ public class ServerConfig {
 		this.portNumber = portNumber;
 		this.remoteInterfaceIdentifier = remoteInterfaceIdentifier;
 	}
-    
+
 	public ServerConfig()
 	{
 		this.hostName = DEFAULT_HOST_NAME;
