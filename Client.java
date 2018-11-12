@@ -86,7 +86,7 @@ public class Client {
                         writer.close();
 
 
-                        /*System.out.println("You can start writing in vi now");
+                        System.out.println("You can start writing in vi now");
                         ProcessBuilder processBuilder = new ProcessBuilder("/usr/bin/vi", "/tmp/tmp" + time + ".txt");
                         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
                         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -94,7 +94,7 @@ public class Client {
 
                         Process p = processBuilder.start();
                         // wait for termination.
-                        p.waitFor();*/
+                        p.waitFor();
 
                         BufferedReader br = new BufferedReader(new FileReader("/tmp/tmp" + time + ".txt"));
                         StringBuilder tmpContent = new StringBuilder();
