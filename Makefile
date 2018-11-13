@@ -1,27 +1,20 @@
 JCC = javac
-SRC = src/com/example/fileserver
-BIN = bin
 JFLAGS = -g
 
 all:
-	$(JCC) $(SRC)/*.java -d $(BIN)
+	javac *.java
 
+Server:
+	$(JCC) $(JFLAGS) Server.java
 
-server:
-	$(JCC) $(JFLAGS) $(SRC)/ServerConfig.java $(SRC)/FileServerRemoteInterface.java $(SRC)/FileServer.java $(SRC)/FileServerImpl.java -d $(BIN)
+Client:
+	$(JCC) $(JFLAGS) Client.java
 
+Impl:
+	$(JCC) $(JFLAGS) Impl.java
 
-client:
-	$(JCC) $(JFLAGS) $(SRC)/ServerConfig.java $(SRC)/FileServerRemoteInterface.java $(SRC)/FileClient.java -d $(BIN)
-
+RemoteInterface:
+	$(JCC) $(JFLAGS) RemoteInterface.java
 
 clean:
-	rm -rf $(BIN)
-
-
-run-server:
-	java -classpath $(BIN) com.example.fileserver.FileServer
-
-
-run-client:
-	java -classpath $(BIN) com.example.fileserver.FileClient
+	rm *.class
