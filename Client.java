@@ -104,8 +104,9 @@ public class Client {
               tmpContent.append(line + "\n");
             }
             stub.writeFile(fileName, tmpContent.toString());
-            System.out.println("File: " + fileName + " updated successfully");
-            stub.invalidateCacheForFile(fileName);
+            System.out.println("File: " + fileName + " updated successfully and locally cached");
+            stub.invalidateCacheForFile(fileName, clientId);
+            cache.put(fileName, tmpContent.toString());
           } else {
             System.out.println("File does not exist. Please create one.");
           }

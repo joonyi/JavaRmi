@@ -17,7 +17,7 @@ public interface RemoteInterface extends Remote {
 	 * method returns a String message to its caller
 	 * @param str :value of String*/
 	public int getClientId() throws RemoteException;
-  public void invalidateCacheForFile(String fileName) throws RemoteException;
+  public void invalidateCacheForFile(String fileName, int clientIdHasUpToDateCache) throws RemoteException;
 	public String createFile(String str) throws RemoteException;
 	public String readFile(String str) throws RemoteException;
   public List<String> getServerFileList() throws RemoteException;

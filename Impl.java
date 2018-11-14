@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,8 +35,8 @@ public class Impl implements RemoteInterface {
  }
 
   @Override
-  public void invalidateCacheForFile(String fileName) throws RemoteException{
-    upToDatefileCacheInClientsMap.put(fileName, null);
+  public void invalidateCacheForFile(String fileName, int clientIdHasUpToDateCache) throws RemoteException{
+      upToDatefileCacheInClientsMap.put(fileName, new HashSet<>(Arrays.asList(clientIdHasUpToDateCache)));
   }
 
   @Override
