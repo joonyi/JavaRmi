@@ -13,151 +13,173 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
-
-//remote object
 public class Impl implements RemoteInterface {
-  private Map<String, Set<Integer>> upToDatefileCacheInClientsMap = new HashMap<>();
-  private Set<String> inWritingStatusFileList = new HashSet<>();
-  private int currentClientId = 0;
+	
+	private Map<String, Set<Integer>> upToDatefileCacheInClientsMap = new HashMap<>();
+	private Set<String> inWritingStatusFileList = new HashSet<>();
+	private int currentClientId = 0;
 
-  @Override
-  public int getClientId() {
-    return currentClientId++;
-  }
- @Override
-  public boolean checkIsFileModifyingAndLockItIfNot(String fileName) throws RemoteException {
-    if(inWritingStatusFileList.contains(fileName)){
-      return true;
-    }
-    inWritingStatusFileList.add(fileName);
-    return false;
- }
+	@Override
+	public synchronized int getClientId() {
+		return currentClientId++;
+	}
 
-  @Override
-  public void invalidateCacheForFile(String fileName, int clientIdHasUpToDateCache) throws RemoteException{
-      upToDatefileCacheInClientsMap.put(fileName, new HashSet<>(Arrays.asList(clientIdHasUpToDateCache)));
-  }
+	@Override
+	public boolean checkAndAcquireWriteLock(String fileName, Boolean shouldAcquireWriteLock) throws RemoteException {
+		//Checking and locking the file for writing must happen atomically
+		synchronized (inWritingStatusFileList) {
+			try {
+				System.out.println("Sleep for 10s before checking and acquiring file's write lock");
+				TimeUnit.SECONDS.sleep(10);
+				System.out.println("Woke up after 10s");
+			} catch (InterruptedException ex) {
+				System.err.println(ex);
+			}
+			if (inWritingStatusFileList.contains(fileName)) {
+				return true;
+			}
+			if (shouldAcquireWriteLock) {
+				inWritingStatusFileList.add(fileName);
+				return false;
+			}
+		}
+		return false;
+	}
 
-  @Override
-  public boolean isFileCacheUpToDateForClient(String fileName, int clientId) throws RemoteException {
-    return upToDatefileCacheInClientsMap.size() > 0
-    && upToDatefileCacheInClientsMap.get(fileName) != null
-    && upToDatefileCacheInClientsMap.get(fileName).stream().filter(id -> id.equals(clientId)).count() == 1;
-  }
+	
+	public void updateFileCacheInClientsMap(String fileName, int clientId) {
+		synchronized (upToDatefileCacheInClientsMap) {
+			upToDatefileCacheInClientsMap.put(fileName, new HashSet<Integer>(Arrays.asList(clientId)));
+		}
+	}
 
-  @Override
-  public void notifyServerClientHasCachedLatestFile(String fileName, int clientId) throws RemoteException{
-    if(upToDatefileCacheInClientsMap.containsKey(fileName)) {
-      Set<Integer> currentClientList = upToDatefileCacheInClientsMap.get(fileName);
-      if (currentClientList == null)
-        currentClientList = new HashSet<>();
-      currentClientList.add(clientId);
-      upToDatefileCacheInClientsMap.put(fileName, currentClientList);
-    } else {
-      upToDatefileCacheInClientsMap.put(fileName, new HashSet<>(Arrays.asList(clientId)));
-    }
+	@Override
+	public boolean isFileCacheUpToDateForClient(String fileName, int clientId) throws RemoteException {
+		synchronized (upToDatefileCacheInClientsMap) {
+			return upToDatefileCacheInClientsMap.size() > 0 && upToDatefileCacheInClientsMap.get(fileName) != null
+					&& upToDatefileCacheInClientsMap.get(fileName).stream().filter(id -> id.equals(clientId))
+							.count() == 1;
+		}
+	}
 
-  }
+	@Override
+	public void notifyServerClientHasCachedLatestFile(String fileName, int clientId) throws RemoteException {
+		synchronized (upToDatefileCacheInClientsMap) {
+			if (upToDatefileCacheInClientsMap.containsKey(fileName)) {
+				Set<Integer> currentClientList = upToDatefileCacheInClientsMap.get(fileName);
+				if (currentClientList == null) {
+					currentClientList = new HashSet<Integer>();
+				}
+				currentClientList.add(clientId);
+				upToDatefileCacheInClientsMap.put(fileName, currentClientList);
+			} else {
+				upToDatefileCacheInClientsMap.put(fileName, new HashSet<Integer>(Arrays.asList(clientId)));
+			}
+		}
+	}
 
-  @Override
-  public String createFile(String str) throws RemoteException {
-    File file = new File(str);
-    try {
-      if (file.createNewFile()) {
-        return str + " is created\n";
-      } else {
-        return str + " already existed\n";
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return null;
-  }
+	@Override
+	public String createFile(String fileName) throws RemoteException {
+		File file = new File(fileName);
+		try {
+			if (file.createNewFile()) {
+				return fileName + " is created\n";
+			} else {
+				return fileName + " already existed\n";
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-  @Override
-  public String readFile(String str) throws RemoteException {
-    try {
-      BufferedReader br = new BufferedReader(new FileReader(str));
-      StringBuilder content = new StringBuilder();
-      while (true) {
-        String line = br.readLine();
-        if (line == null) {
-          break;
-        }
-        content.append(line + "\n");
-      }
-      return content.toString();
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return "File doesn't exist";
-  }
+	@Override
+	public String readFile(String fileName) throws RemoteException {
+		
+		if (!checkFileNameExists(fileName)) {
+			throw new RemoteException("File doesn't exist");
+		}
 
-  @Override
-  public boolean checkFileNameExists(String str) throws RemoteException {
-    try {
-      File f = new File(str);
-      boolean exists = f.exists();
-      return exists;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return false;
-  }
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(fileName));
+			StringBuilder content = new StringBuilder();
+			while (true) {
+				String line = br.readLine();
+				if (line == null) {
+					break;
+				}
+				content.append(line + "\n");
+			}
+			return content.toString();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
 
-  @Override
-  public String writeFile(String fileName, String filContent) throws RemoteException {
-    try {
-      PrintWriter writer = new PrintWriter(fileName);
-      writer.print(filContent);
-      writer.close();
-      inWritingStatusFileList.remove(fileName);
-      return "Write Completed ";
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return null;
-  }
+	@Override
+	public boolean checkFileNameExists(String fileName) throws RemoteException {
+		try {
+			File f = new File(fileName);
+			boolean exists = f.exists();
+			return exists;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 
-  @Override
-  public List<String> getServerFileList() {
-    List<String> ret;
-    File folder = new File(".");
-    ret = Arrays.stream(folder.listFiles())
-        .map(File::getName)
-        .filter(name -> name.endsWith(".txt"))
-        .collect(Collectors.toList());
-    return ret;
-  }
+	@Override
+	public String writeFile(String fileName, String filContent, int clientId) throws RemoteException {
+		
+		if (!checkFileNameExists(fileName)) {
+			throw new RemoteException("File doesn't exist");
+		}
 
-  @Override
-  public String deleteFile(String str) throws RemoteException {
-    File file = new File(str);
+		try {
+			PrintWriter writer = new PrintWriter(fileName);
+			writer.print(filContent);
+			writer.close();
+			synchronized (inWritingStatusFileList) {
+				inWritingStatusFileList.remove(fileName);
+			}
+			updateFileCacheInClientsMap(fileName, clientId);
+			return "Write Completed ";
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-    if (file.delete()) {
-      return "Succeeded\n";
-    } else {
-      return "Failed\n";
-    }
-  }
+	@Override
+	public List<String> getServerFileList() throws RemoteException {
+		List<String> ret;
+		File folder = new File(".");
+		ret = Arrays.stream(folder.listFiles()).map(File::getName).filter(name -> name.endsWith(".txt"))
+				.collect(Collectors.toList());
+		return ret;
+	}
 
-    /*@Override
-    public String viewFile() throws RemoteException {
-        String display = "";
-        File f = null;
-        File[] paths;
-        try {
-            f = new File(System.getProperty("user.dir"));
-            paths = f.listFiles();
-            for(File path:paths) {
-                display += path.getName() + "\t";
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        return display;
-    }*/
+	@Override
+	public Boolean deleteFile(String fileName) throws RemoteException {
+		if (!checkFileNameExists(fileName)) {
+			throw new RemoteException("File doesn't exist");
+		}
+		File file = new File(fileName);
+		if (checkAndAcquireWriteLock(fileName, false)) {
+			throw new RemoteException("The file is currently being modified. Cannot delete.");
+		}
+		if (file.delete()) {
+			synchronized (upToDatefileCacheInClientsMap) {
+				upToDatefileCacheInClientsMap.remove(fileName);
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
